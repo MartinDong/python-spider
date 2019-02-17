@@ -23,7 +23,7 @@ Modify:
 class download(object):
 	def __init__(self, target):
 		self.__target_url = target
-		self.__head = {'User-Agent':'Mozilla/5.0 (Linux; Android 4.1.1; Nexus 7 Build/JRO03D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166  Safari/535.19',}
+		self.__head = {'User-Agent':'Mozilla/5.0 (Android; Mobile; rv:14.0) Gecko/14.0 Firefox/14.0',}
 
 	"""
 	函数说明:获取下载链接

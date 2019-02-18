@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import scrapy
+from pymongo import MongoClient
 
 
 # scrapy crawl biqukan --nolog
@@ -14,7 +15,14 @@ class BiqukanSpider(scrapy.Spider):
 
     name = 'biqukan'
     allowed_domains = ['biqukan.com']
-    start_urls = ['https://www.biqukan.com/0_973/']
+    start_urls = ['https://www.biqukan.com/57_57405/']
+
+    # 建立MongoDB数据库连接
+    client = MongoClient('localhost', 27017)
+    # 连接所需数据库
+    db = client.biqukan
+    # 连接所用集合，也就是我们通常所说的表
+    collection = db.novel
 
     def parse(self, response):
         # 提取小说基本信息
@@ -41,37 +49,33 @@ class BiqukanSpider(scrapy.Spider):
                         download_url = "https://www.biqukan.com" + chapterHref[0]
                         yield scrapy.Request(url=download_url, callback=self.parse)
         chapter_name = response.xpath('.//div[@class="content"]//h1//text()').extract()
-        print(chapter_name)
+        # print(chapter_name)
         if chapter_name:
             chapter_content = response.xpath('.//div[@id="content" and @class="showtxt"]//text()').extract()
             # print(chapter_content[0])
             # soup_text = chapter_content[0].replace('\xa0', '')
-            print(chapter_content)
-            self.Writer(chapter_name[0], "爬蟲.txt", chapter_content)
+            # print(chapter_content)
+            self.saveNovel(chapter_name[0], chapter_content)
 
-    """
-    函数说明:将爬取的文章内容写入文件
+    # 向集合中插入数据
+    # https://www.biqukan.com/0_973/276441.html
+    def saveNovel(self, name, text):
+        content = ""
+        for each in text:
+            content += each.replace('\xa0', '')
 
-    Parameters:
-        name - 章节名称(string)
-        path - 当前路径下,小说保存名称(string)
-        text - 章节内容(string)
+        if self.findNovelByName(name) is None:
+            print("====保存数据====")
+            self.collection.insert(
+                {
+                    "name": name,
+                    "content": content,
+                }
+            )
 
-    Returns:
-        无
-
-    Modify:
-        2019-02-18
-    """
-
-    def Writer(self, name, path, text):
-        write_flag = True
-        with open(path, 'a', encoding='utf-8') as  f:
-            f.write(name + '\n\n')
-            for each in text:
-                each = each.replace('\xa0', '')
-                if each == 'h':
-                    write_flag = False
-                if write_flag == True and each != ' ':
-                    f.write("\t" + each)
-            f.write('\n\n')
+    # 根据小说ID查询
+    def findNovelByName(self, name):
+        print("====查找数据====")
+        res = self.collection.find_one({"name": name})
+        print(res)
+        return res
